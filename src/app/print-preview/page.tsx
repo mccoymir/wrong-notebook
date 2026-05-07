@@ -27,6 +27,13 @@ function PrintPreviewContent() {
     const fetchItems = async () => {
         try {
             const params = new URLSearchParams(searchParams.toString());
+            const idsParam = params.get("ids");
+            if (idsParam) {
+                const ids = idsParam.split(",").map(s => s.trim()).filter(Boolean);
+                const results = await Promise.all(ids.map(id => apiClient.get<ErrorItem>(`/api/error-items/${id}`)));
+                setItems(results);
+                return;
+            }
             // 打印预览需要所有符合条件的数据，设置较大的 pageSize
             params.set("pageSize", String(PRINT_PREVIEW_PAGE_SIZE));
             const response = await apiClient.get<PaginatedResponse<ErrorItem>>(`/api/error-items/list?${params.toString()}`);

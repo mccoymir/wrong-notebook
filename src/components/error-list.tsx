@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Search, Filter, CheckCircle, Clock, ChevronDown, Printer, ListChecks, Trash2, X } from "lucide-react";
+import { Search, Filter, CheckCircle, Clock, ChevronDown, Printer, ListChecks, Trash2, X, Sparkles } from "lucide-react";
 import Link from "next/link";
 import { format } from "date-fns";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -165,6 +165,20 @@ export function ErrorList({ subjectId, subjectName }: ErrorListProps = {}) {
         } finally {
             setIsDeleting(false);
         }
+    };
+
+    const handleExportSelected = () => {
+        if (selectedIds.size === 0) return;
+        const params = new URLSearchParams();
+        params.set("ids", Array.from(selectedIds).join(","));
+        router.push(`/print-preview?${params.toString()}`);
+    };
+
+    const handlePracticeSelected = () => {
+        if (selectedIds.size === 0) return;
+        const params = new URLSearchParams();
+        params.set("ids", Array.from(selectedIds).join(","));
+        router.push(`/practice?${params.toString()}`);
     };
 
     // 追踪筛选条件是否变化（用于判断是否需要重置页码）
@@ -478,6 +492,22 @@ export function ErrorList({ subjectId, subjectName }: ErrorListProps = {}) {
                             >
                                 <Trash2 className="mr-2 h-4 w-4" />
                                 {t.notebook?.deleteSelected || "删除选中"}
+                            </Button>
+                            <Button
+                                variant="outline"
+                                onClick={handleExportSelected}
+                                disabled={selectedIds.size === 0}
+                            >
+                                <Printer className="mr-2 h-4 w-4" />
+                                导出选中
+                            </Button>
+                            <Button
+                                variant="outline"
+                                onClick={handlePracticeSelected}
+                                disabled={selectedIds.size === 0}
+                            >
+                                <Sparkles className="mr-2 h-4 w-4" />
+                                选中举一反三
                             </Button>
                         </div>
                     </div>

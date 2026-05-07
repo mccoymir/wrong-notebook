@@ -21,6 +21,8 @@ function PracticeContent() {
     const searchParams = useSearchParams();
     const router = useRouter();
     const errorItemId = searchParams.get("id");
+    const errorItemIds = (searchParams.get("ids") || "").split(",").map(s => s.trim()).filter(Boolean);
+    const [currentBatchIndex, setCurrentBatchIndex] = useState(0);
     const { t, language } = useLanguage();
 
     const [question, setQuestion] = useState<ParsedQuestion | null>(null);
@@ -45,12 +47,18 @@ function PracticeContent() {
             .catch(err => console.error(err));
     }, []);
 
+    useEffect(() => {
+        if (!errorItemId && errorItemIds.length > 0 && !question) {
+            generateQuestion();
+        }
+    }, [currentBatchIndex]);
+
     const [difficulty, setDifficulty] = useState<"easy" | "medium" | "hard" | "harder">("medium");
 
     const [error, setError] = useState<string | null>(null);
 
     const generateQuestion = async () => {
-        if (!errorItemId) return;
+        if (!errorItemId && errorItemIds.length === 0) return;
 
         setLoading(true);
         setError(null);
@@ -64,12 +72,22 @@ function PracticeContent() {
             frontendLogger.info('[Practice]', 'Generating question', {
                 timeout
             });
-            const data = await apiClient.post<ParsedQuestion>("/api/practice/generate", {
-                errorItemId,
-                language,
-                difficulty
-            }, { timeout });
-            setQuestion(data);
+            if (errorItemId) {
+                const data = await apiClient.post<ParsedQuestion>("/api/practice/generate", {
+                    errorItemId,
+                    language,
+                    difficulty
+                }, { timeout });
+                setQuestion(data);
+            } else {
+                const targetId = errorItemIds[currentBatchIndex];
+                const data = await apiClient.post<ParsedQuestion>("/api/practice/generate", {
+                    errorItemId: targetId,
+                    language,
+                    difficulty
+                }, { timeout });
+                setQuestion(data);
+            }
         } catch (error: any) {
             console.error(error);
             const msg = error.data?.message || "";
@@ -121,11 +139,23 @@ function PracticeContent() {
         apiClient.post("/api/practice/record", {
             subject: question.subject || "Unknown",
             difficulty,
-            isCorrect: isMatch
+            isCorrect: isMatch,
+            sourceErrorItemId: errorItemId || errorItemIds[currentBatchIndex],
+            questionText: question.questionText,
+            answerText: question.answerText,
+            analysis: question.analysis
         }).catch(err => console.error("Failed to save practice record:", err));
     };
 
-    if (!errorItemId) {
+    const handleNextBatchQuestion = async () => {
+        if (errorItemId || errorItemIds.length === 0) return;
+        const nextIndex = currentBatchIndex + 1;
+        if (nextIndex >= errorItemIds.length) return;
+        setCurrentBatchIndex(nextIndex);
+        setQuestion(null);
+    };
+
+    if (!errorItemId && errorItemIds.length === 0) {
         return <div className="p-8 text-center">{t.practice.invalidRequest || "Invalid Request"}</div>;
     }
 
@@ -147,6 +177,11 @@ function PracticeContent() {
                 <p className="text-muted-foreground">
                     {t.practice.subtitle}
                 </p>
+                {!errorItemId && errorItemIds.length > 0 && (
+                    <p className="text-sm text-muted-foreground">
+                        批量模式：第 {currentBatchIndex + 1} / {errorItemIds.length} 题
+                    </p>
+                )}
 
                 {error && (
                     <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded relative" role="alert">
@@ -342,6 +377,13 @@ function PracticeContent() {
                                     <MarkdownRenderer content={question.analysis} />
                                 </CardContent>
                             </Card>
+                            {!errorItemId && errorItemIds.length > 0 && (
+                                <div className="flex justify-end">
+                                    <Button onClick={handleNextBatchQuestion} disabled={currentBatchIndex >= errorItemIds.length - 1}>
+                                        下一题
+                                    </Button>
+                                </div>
+                            )}
                         </div>
                     )}
                 </div>

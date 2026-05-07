@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { BackButton } from "@/components/ui/back-button";
-import { Plus, House, Pencil } from "lucide-react";
+import { Plus, House, Pencil, History } from "lucide-react";
 import Link from "next/link";
 import { ErrorList } from "@/components/error-list";
 import { RenameNotebookDialog } from "@/components/rename-notebook-dialog";
@@ -93,6 +93,11 @@ export default function NotebookDetailPage() {
                         <Link href="/">
                             <Button variant="ghost" size="icon">
                                 <House className="h-5 w-5" />
+                            </Button>
+                        </Link>
+                        <Link href="/practice-history">
+                            <Button variant="ghost" size="icon" title="举一反三记录">
+                                <History className="h-5 w-5" />
                             </Button>
                         </Link>
                     </div>

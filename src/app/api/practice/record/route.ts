@@ -15,7 +15,7 @@ export async function POST(req: Request) {
     }
 
     try {
-        const { subject, difficulty, isCorrect } = await req.json();
+        const { subject, difficulty, isCorrect, sourceErrorItemId, questionText, answerText, analysis } = await req.json();
 
         // @ts-ignore
         const userId = session.user.id;
@@ -26,6 +26,10 @@ export async function POST(req: Request) {
                 subject,
                 difficulty,
                 isCorrect,
+                sourceErrorItemId,
+                questionText,
+                answerText,
+                analysis,
             },
         });
 
