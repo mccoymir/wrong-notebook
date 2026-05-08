@@ -4,11 +4,14 @@ import CredentialsProvider from "next-auth/providers/credentials"
 import { prisma } from "@/lib/prisma"
 import { compare } from "bcryptjs"
 import { createLogger } from "@/lib/logger"
+import { getAuthSecret } from "@/lib/auth-secret"
 
 const logger = createLogger('auth');
+const authSecret = getAuthSecret();
 
 export const authOptions: NextAuthOptions = {
     adapter: PrismaAdapter(prisma),
+    secret: authSecret,
     session: {
         strategy: "jwt",
     },
@@ -125,6 +128,6 @@ export const authOptions: NextAuthOptions = {
 logger.info({
     NODE_ENV: process.env.NODE_ENV,
     NEXTAUTH_URL: process.env.NEXTAUTH_URL,
-    HAS_SECRET: !!process.env.NEXTAUTH_SECRET,
+    HAS_SECRET: !!authSecret,
     AUTH_TRUST_HOST: process.env.AUTH_TRUST_HOST
 }, 'AuthConfig loading');
