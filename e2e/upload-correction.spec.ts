@@ -95,8 +95,8 @@ test('Upload image, correct, save, and verify in notebook', async ({ page }) => 
     }
 
     // 9. Save
-    // Click "Save to Notebook" / "保存"
-    await page.getByRole('button', { name: /保存|Save/ }).click();
+    // Click the primary "Save to Notebook" action, not the separate saved-practice button.
+    await page.getByRole('button', { name: /保存到错题本|Save to Notebook/ }).click();
 
     // 10. Verify Redirection and Content
     // Should redirect to /notebooks/[id]
