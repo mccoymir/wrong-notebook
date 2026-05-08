@@ -153,6 +153,21 @@ export interface PracticeStatsData {
     overallStats: { total: number; correct: number; rate: string };
 }
 
+export interface SavedPracticeQuestion {
+    id: string;
+    userId: string;
+    errorItemId?: string | null;
+    questionText: string;
+    answerText: string;
+    analysis: string;
+    subject?: string | null;
+    difficulty?: 'easy' | 'medium' | 'hard' | 'harder' | string | null;
+    knowledgePoints?: string | null;
+    requiresImage: boolean;
+    createdAt: string;
+    updatedAt: string;
+}
+
 export interface TagStats {
     tag: string;
     count: number;
