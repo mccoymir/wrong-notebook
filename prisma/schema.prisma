@@ -28,6 +28,7 @@ model User {
   errorItems ErrorItem[]
   subjects   Subject[]
   practiceRecords PracticeRecord[]
+  savedPracticeQuestions SavedPracticeQuestion[]
   customTags KnowledgeTag[] // User's custom tags
 }
 
@@ -113,6 +114,7 @@ model ErrorItem {
   updatedAt        DateTime @updatedAt
 
   reviewSchedules ReviewSchedule[]
+  savedPracticeQuestions SavedPracticeQuestion[]
 }
 
 model ReviewSchedule {
@@ -137,4 +139,26 @@ model PracticeRecord {
   isCorrect Boolean?
   
   createdAt DateTime @default(now())
+}
+
+model SavedPracticeQuestion {
+  id          String    @id @default(cuid())
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  errorItemId String?
+  errorItem   ErrorItem? @relation(fields: [errorItemId], references: [id], onDelete: SetNull)
+
+  questionText     String
+  answerText       String
+  analysis         String
+  subject          String?
+  difficulty       String?
+  knowledgePoints  String?
+  requiresImage    Boolean  @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId, createdAt])
+  @@index([errorItemId])
 }

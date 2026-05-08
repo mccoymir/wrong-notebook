@@ -38,14 +38,31 @@ async function request<T>(url: string, options: RequestOptions = {}): Promise<T>
         });
         clearTimeout(timeoutId);
 
-        if (!res.ok) {
-            let errorData;
-            try {
-                errorData = await res.json();
-            } catch {
-                errorData = await res.text();
+        const responseText = res.status === 204 ? "" : await res.text();
+        const contentType = res.headers.get("content-type") || "";
+        const parseResponseBody = () => {
+            if (!responseText) {
+                return {};
             }
-            throw new ApiError(res.status, res.statusText, errorData);
+
+            if (contentType.includes("application/json")) {
+                return JSON.parse(responseText);
+            }
+
+            return responseText;
+        };
+
+        if (!res.ok) {
+            try {
+                throw new ApiError(res.status, res.statusText, parseResponseBody());
+            } catch (parseError) {
+                if (parseError instanceof ApiError) {
+                    throw parseError;
+                }
+                throw new ApiError(res.status, res.statusText, responseText || {
+                    message: `HTTP_${res.status}`,
+                });
+            }
         }
 
         // Handle empty responses (e.g. 204 No Content)
@@ -54,10 +71,8 @@ async function request<T>(url: string, options: RequestOptions = {}): Promise<T>
         }
 
         try {
-            return await res.json();
+            return parseResponseBody() as T;
         } catch {
-            // If JSON parse fails but response was OK, return text or empty object?
-            // For now, assume JSON APIs.
             return {} as T;
         }
     } catch (error) {
