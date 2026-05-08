@@ -5,7 +5,6 @@ import { createLogger } from "@/lib/logger";
 import { getAuthSecret } from "@/lib/auth-secret";
 
 const logger = createLogger('middleware');
-const authSecret = getAuthSecret();
 
 export async function middleware(req: NextRequest) {
     // Debug logging for middleware
@@ -14,7 +13,7 @@ export async function middleware(req: NextRequest) {
     try {
         const token = await getToken({
             req,
-            secret: authSecret,
+            secret: getAuthSecret(),
             cookieName: "next-auth.session-token", // Explicitly look for the standardized cookie
         });
 
