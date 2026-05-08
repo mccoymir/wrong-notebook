@@ -1,12 +1,19 @@
-name: Manual Docker Build & Publish
+name: Docker Build & Publish
 
 on:
+  workflow_run:
+    workflows: ["CI"]
+    types: [completed]
+    branches: [main]
+  push:
+    tags:
+      - 'v*'
   workflow_dispatch:
     inputs:
       tag:
-        description: 'Docker image tag (default: latest)'
+        description: 'Docker image tag override for manual runs (optional)'
         required: false
-        default: 'latest'
+        default: ''
 
 env:
   REGISTRY: ghcr.io
@@ -15,6 +22,10 @@ env:
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
+    if: |
+      github.event_name == 'workflow_dispatch' ||
+      github.event_name == 'push' ||
+      (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success')
     permissions:
       contents: read
       packages: write
@@ -22,7 +33,40 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
 
+      - name: Prepare Docker tags
+        id: prep
+        shell: bash
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_run" ]; then
+            COMMIT_SHA="${{ github.event.workflow_run.head_sha }}"
+            REF_NAME="${{ github.event.workflow_run.head_branch }}"
+          else
+            COMMIT_SHA="${GITHUB_SHA}"
+            REF_NAME="${GITHUB_REF_NAME}"
+          fi
+
+          SHORT_SHA="${COMMIT_SHA::7}"
+          IMAGE="${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}"
+
+          {
+            echo "tags<<EOF"
+            echo "${IMAGE}:sha-${SHORT_SHA}"
+            if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ -n "${{ inputs.tag }}" ]; then
+              echo "${IMAGE}:${{ inputs.tag }}"
+            elif [[ "${GITHUB_REF}" == refs/tags/v* ]]; then
+              TAG_NAME="${GITHUB_REF#refs/tags/}"
+              VERSION="${TAG_NAME#v}"
+              echo "${IMAGE}:${TAG_NAME}"
+              echo "${IMAGE}:${VERSION}"
+              echo "${IMAGE}:latest"
+            elif [ "${REF_NAME}" = "main" ]; then
+              echo "${IMAGE}:latest"
+            fi
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
 
       # Set up QEMU for multi-arch builds
       - name: Set up QEMU
@@ -44,6 +88,6 @@ jobs:
           context: .
           push: true
           platforms: linux/amd64,linux/arm64
-          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ inputs.tag }}
+          tags: ${{ steps.prep.outputs.tags }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
