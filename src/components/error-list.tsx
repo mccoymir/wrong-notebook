@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Search, Filter, CheckCircle, Clock, ChevronDown, Printer, ListChecks, Trash2, X } from "lucide-react";
+import { Search, Filter, CheckCircle, Clock, ChevronDown, Printer, ListChecks, Trash2, X, RefreshCw } from "lucide-react";
 import Link from "next/link";
 import { format } from "date-fns";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -81,6 +81,15 @@ export function ErrorList({ subjectId, subjectName }: ErrorListProps = {}) {
         router.push(`/print-preview?${params.toString()}`);
     };
 
+    // 多选模式下导出选中的题目
+    const handleExportSelected = () => {
+        if (selectedIds.size === 0) return;
+
+        const params = new URLSearchParams();
+        params.append("ids", Array.from(selectedIds).join(","));
+        router.push(`/print-preview?${params.toString()}`);
+    };
+
     const handleTagClick = (tag: string) => {
         setSelectedTag(selectedTag === tag ? null : tag);
     };
@@ -141,6 +150,13 @@ export function ErrorList({ subjectId, subjectName }: ErrorListProps = {}) {
             }
             return newSet;
         });
+    };
+
+    const handleBatchPractice = () => {
+        if (selectedIds.size === 0) return;
+        // 跳转到批量举一反三页面
+        const ids = Array.from(selectedIds).join(",");
+        router.push(`/practice?ids=${ids}`);
     };
 
     const handleBatchDelete = async () => {
@@ -463,13 +479,29 @@ export function ErrorList({ subjectId, subjectName }: ErrorListProps = {}) {
                         <span className="text-sm text-muted-foreground">
                             {(t.notebook?.selectedCount || "{count} selected").replace("{count}", selectedIds.size.toString())}
                         </span>
-                        <div className="flex gap-2">
+                        <div className="flex gap-2 flex-wrap">
                             <Button
                                 variant="outline"
                                 onClick={toggleSelectMode}
                             >
                                 <X className="mr-2 h-4 w-4" />
                                 {t.notebook?.cancelSelect || "取消"}
+                            </Button>
+                            <Button
+                                variant="outline"
+                                onClick={handleExportSelected}
+                                disabled={selectedIds.size === 0}
+                            >
+                                <Printer className="mr-2 h-4 w-4" />
+                                {t.notebook?.exportSelected || "导出选中"}
+                            </Button>
+                            <Button
+                                variant="default"
+                                onClick={handleBatchPractice}
+                                disabled={selectedIds.size === 0}
+                            >
+                                <RefreshCw className="mr-2 h-4 w-4" />
+                                {t.notebook?.batchPractice || "批量举一反三"}
                             </Button>
                             <Button
                                 variant="destructive"
