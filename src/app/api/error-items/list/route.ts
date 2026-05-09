@@ -138,6 +138,15 @@ export async function GET(req: Request) {
             whereClause.paperLevel = paperLevel;
         }
 
+        // 按 ID 列表筛选（用于多选导出）
+        const idsParam = searchParams.get("ids");
+        if (idsParam) {
+            const ids = idsParam.split(",").filter(id => id.trim());
+            if (ids.length > 0) {
+                whereClause.id = { in: ids };
+            }
+        }
+
         // 将所有 AND 条件合并到 whereClause
         if (andConditions.length > 0) {
             whereClause.AND = andConditions;
